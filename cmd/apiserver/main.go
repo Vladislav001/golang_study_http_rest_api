@@ -1,5 +1,7 @@
 package main
 
+// @see https://www.youtube.com/watch?v=LxJLuW5aUDQ&list=PLehOyJfJkFkJ5m37b4oWh783yzVlHdnUH
+
 import (
 	"flag"
 	"github.com/BurntSushi/toml"
@@ -15,7 +17,6 @@ func init() {
 	flag.StringVar(&configPath, "config-path", "configs/apiserver.toml", "path to config file")
 }
 
-// пока хз с MAKEFILE -  go build ./cmd/apiserver
 func main() {
 	flag.Parse()
 
