@@ -1,8 +1,5 @@
 package store
 
-// *На win10 надо ставить постгрес + руками создать БД
-//(https://winitpro.ru/index.php/2019/10/25/ustanovka-nastrojka-postgresql-v-windows/)
-
 import (
 	"database/sql"
 
