@@ -10,3 +10,7 @@
 - пример наката миграции: migrate -path C:/Users/Админ/GolandProjects/golang_study_http_rest_api/golang-migrate/cli/migrations -database "postgres://localhost/restapi_dev?sslmode=disable" up
 *Но крч дичь какая-то, проблемы, пока через pgadmin ручками тупо через Query Tool вставляю sql
 
+--------------
+TODO:
+1. Разобраться с MAKEFILE для win10, мб аналог есть для сборки на win10
+2. Разобраться с миграциями, чтобы по норму делались/работали
