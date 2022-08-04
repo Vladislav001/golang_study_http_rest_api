@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/Vladislav001/golang_study_http_rest_api/internal/app/model"
 	"github.com/Vladislav001/golang_study_http_rest_api/internal/app/store/teststore"
+	"github.com/gorilla/sessions"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
@@ -12,7 +13,7 @@ import (
 )
 
 func TestServer_HandleUsersCreate(t *testing.T) {
-	s := newServer(teststore.New())
+	s := newServer(teststore.New(), sessions.NewCookieStore([]byte("")))
 	testCases := []struct {
 		name         string
 		payload      interface{}
@@ -57,7 +58,7 @@ func TestServer_HandleSessionsCreate(t *testing.T) {
 	u := model.TestUser(t)
 	store := teststore.New()
 	store.User().Create(u)
-	s := newServer(store)
+	s := newServer(store, sessions.NewCookieStore([]byte("")))
 
 	testCases := []struct {
 		name         string

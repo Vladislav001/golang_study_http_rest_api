@@ -6,6 +6,7 @@ import (
 	"github.com/Vladislav001/golang_study_http_rest_api/internal/app/model"
 	"github.com/Vladislav001/golang_study_http_rest_api/internal/app/store"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	"github.com/sirupsen/logrus"
 	"net/http"
 )
@@ -13,21 +14,27 @@ import (
 // Более простая версия сервера - не знает про запуск сервера, про http, а
 // будет уметь только обрабатывать входящий запрос
 
+const (
+	sessionName = "vladstudy"
+)
+
 var (
 	errIncorrectEmailOrPassword = errors.New("incorrect email or password")
 )
 
 type server struct {
-	router *mux.Router
-	logger *logrus.Logger
-	store  store.Store
+	router       *mux.Router
+	logger       *logrus.Logger
+	store        store.Store
+	sessionStore sessions.Store
 }
 
-func newServer(store store.Store) *server {
+func newServer(store store.Store, sessionStore sessions.Store) *server {
 	s := &server{
-		router: mux.NewRouter(),
-		logger: logrus.New(),
-		store:  store,
+		router:       mux.NewRouter(),
+		logger:       logrus.New(),
+		store:        store,
+		sessionStore: sessionStore,
 	}
 
 	s.configureRouter()
@@ -91,6 +98,18 @@ func (s *server) handleSessionsCreate() http.HandlerFunc {
 
 		if err != nil || !u.ComparePassword(req.Password) {
 			s.error(w, r, http.StatusUnauthorized, errIncorrectEmailOrPassword)
+			return
+		}
+
+		session, err := s.sessionStore.Get(r, sessionName)
+		if err != nil {
+			s.error(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		session.Values["user_id"] = u.ID
+		if err := s.sessionStore.Save(r, w, session); err != nil {
+			s.error(w, r, http.StatusInternalServerError, err)
 			return
 		}
 
