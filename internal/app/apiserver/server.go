@@ -1,6 +1,7 @@
 package apiserver
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"github.com/Vladislav001/golang_study_http_rest_api/internal/app/model"
@@ -15,12 +16,16 @@ import (
 // будет уметь только обрабатывать входящий запрос
 
 const (
-	sessionName = "vladstudy"
+	sessionName        = "vladstudy"
+	ctxKeyUser  ctxKey = iota
 )
 
 var (
 	errIncorrectEmailOrPassword = errors.New("incorrect email or password")
+	errNotAuthenticated         = errors.New("not authenticated")
 )
+
+type ctxKey int8
 
 type server struct {
 	router       *mux.Router
@@ -49,6 +54,31 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (s *server) configureRouter() {
 	s.router.HandleFunc("/users", s.handleUsersCreate()).Methods("POST")
 	s.router.HandleFunc("/sessions", s.handleSessionsCreate()).Methods("POST")
+}
+
+func (s *server) authenticateUser(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		session, err := s.sessionStore.Get(request, sessionName)
+		if err != nil {
+			s.error(writer, request, http.StatusInternalServerError, err)
+			return
+		}
+
+		id, ok := session.Values["user_id"]
+		if !ok {
+			s.error(writer, request, http.StatusUnauthorized, errNotAuthenticated)
+			return
+		}
+
+		u, err := s.store.User().Find(id.(int))
+		if err != nil {
+			s.error(writer, request, http.StatusUnauthorized, errNotAuthenticated)
+			return
+		}
+
+		// прикрепляем юзера к контексту запроса (чтобы в след. миддлевер и т.п не искать заного)
+		next.ServeHTTP(writer, request.WithContext(context.WithValue(request.Context(), ctxKeyUser, u)))
+	})
 }
 
 func (s *server) handleUsersCreate() http.HandlerFunc {
