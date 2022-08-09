@@ -6,6 +6,7 @@ import (
 	"errors"
 	"github.com/Vladislav001/golang_study_http_rest_api/internal/app/model"
 	"github.com/Vladislav001/golang_study_http_rest_api/internal/app/store"
+	"github.com/google/uuid"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -19,6 +20,7 @@ import (
 const (
 	sessionName        = "vladstudy"
 	ctxKeyUser  ctxKey = iota
+	ctxKeyRequestID
 )
 
 var (
@@ -53,6 +55,8 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) configureRouter() {
+	// у каждого запроса будет уникальный X-Request-ID
+	s.router.Use(s.setRequestID)
 	// разрешить запросы с любых источников/доменов (если напр.с бразуера из за разных портов возникнет CORS)
 	s.router.Use(handlers.CORS(handlers.AllowedOrigins([]string{"*"})))
 
@@ -63,6 +67,14 @@ func (s *server) configureRouter() {
 	private := s.router.PathPrefix("/private").Subrouter()
 	private.Use(s.authenticateUser)
 	private.HandleFunc("/whoami", s.handleWhoami()).Methods("GET")
+}
+
+func (s *server) setRequestID(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		id := uuid.New().String()
+		writer.Header().Set("X-Request-ID", id)
+		next.ServeHTTP(writer, request.WithContext(context.WithValue(request.Context(), ctxKeyRequestID, id)))
+	})
 }
 
 func (s *server) authenticateUser(next http.Handler) http.Handler {
