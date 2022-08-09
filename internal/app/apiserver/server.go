@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/sirupsen/logrus"
 	"net/http"
+	"time"
 )
 
 // Более простая версия сервера - не знает про запуск сервера, про http, а
@@ -57,6 +58,7 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (s *server) configureRouter() {
 	// у каждого запроса будет уникальный X-Request-ID
 	s.router.Use(s.setRequestID)
+	s.router.Use(s.logRequest)
 	// разрешить запросы с любых источников/доменов (если напр.с бразуера из за разных портов возникнет CORS)
 	s.router.Use(handlers.CORS(handlers.AllowedOrigins([]string{"*"})))
 
@@ -74,6 +76,31 @@ func (s *server) setRequestID(next http.Handler) http.Handler {
 		id := uuid.New().String()
 		writer.Header().Set("X-Request-ID", id)
 		next.ServeHTTP(writer, request.WithContext(context.WithValue(request.Context(), ctxKeyRequestID, id)))
+	})
+}
+
+func (s *server) logRequest(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		logger := s.logger.WithFields(logrus.Fields{
+			"remote_addr": request.RemoteAddr,
+			"request_id":  request.Context().Value(ctxKeyRequestID),
+		})
+
+		// пример: started GET /endpoint
+		logger.Info("started %s %s", request.Method, request.RequestURI)
+
+		start := time.Now()
+
+		// т.к ResponseWriter - интерфейс, то определили свой responseWriter, чтобы http код залогировать
+		rw := &responseWriter{writer, http.StatusOK}
+		next.ServeHTTP(rw, request)
+
+		logger.Infof(
+			"completed with %d %s in %v",
+			rw.code,
+			http.StatusText(rw.code),
+			time.Now().Sub(start),
+		)
 	})
 }
 
