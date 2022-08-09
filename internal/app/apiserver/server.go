@@ -6,6 +6,7 @@ import (
 	"errors"
 	"github.com/Vladislav001/golang_study_http_rest_api/internal/app/model"
 	"github.com/Vladislav001/golang_study_http_rest_api/internal/app/store"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/sirupsen/logrus"
@@ -52,6 +53,9 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) configureRouter() {
+	// разрешить запросы с любых источников/доменов (если напр.с бразуера из за разных портов возникнет CORS)
+	s.router.Use(handlers.CORS(handlers.AllowedOrigins([]string{"*"})))
+
 	s.router.HandleFunc("/users", s.handleUsersCreate()).Methods("POST")
 	s.router.HandleFunc("/sessions", s.handleSessionsCreate()).Methods("POST")
 
