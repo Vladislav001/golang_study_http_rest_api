@@ -7,7 +7,7 @@
 	},
 	"item": [
 		{
-			"name": "users (регистрация)",
+			"name": "registration (регистрация)",
 			"request": {
 				"method": "POST",
 				"header": [],
@@ -21,12 +21,12 @@
 					}
 				},
 				"url": {
-					"raw": "{{site}}/users",
+					"raw": "{{site}}/registration",
 					"host": [
 						"{{site}}"
 					],
 					"path": [
-						"users"
+						"registration"
 					]
 				}
 			},
@@ -65,7 +65,7 @@
 			"response": []
 		},
 		{
-			"name": "private/whoami",
+			"name": "private/profile",
 			"protocolProfileBehavior": {
 				"disableBodyPruning": true
 			},
@@ -77,13 +77,13 @@
 					"formdata": []
 				},
 				"url": {
-					"raw": "{{site}}/private/whoami",
+					"raw": "{{site}}/private/profile",
 					"host": [
 						"{{site}}"
 					],
 					"path": [
 						"private",
-						"whoami"
+						"profile"
 					]
 				}
 			},

@@ -62,13 +62,16 @@ func (s *server) configureRouter() {
 	// разрешить запросы с любых источников/доменов (если напр.с бразуера из за разных портов возникнет CORS)
 	s.router.Use(handlers.CORS(handlers.AllowedOrigins([]string{"*"})))
 
-	s.router.HandleFunc("/users", s.handleUsersCreate()).Methods("POST")
-	s.router.HandleFunc("/sessions", s.handleSessionsCreate()).Methods("POST")
+	s.router.HandleFunc("/registration", s.handleUserRegistration()).Methods("POST")
+	s.router.HandleFunc("/auth", s.handleUserAuth()).Methods("POST")
 
 	// middleware будет работать для url-ов вида /private/...
 	private := s.router.PathPrefix("/private").Subrouter()
 	private.Use(s.authenticateUser)
-	private.HandleFunc("/whoami", s.handleWhoami()).Methods("GET")
+	private.HandleFunc("/profile", s.handleGetProfile()).Methods("GET")
+
+	// 404
+	s.router.NotFoundHandler = s.handle404()
 }
 
 func (s *server) setRequestID(next http.Handler) http.Handler {
@@ -87,7 +90,7 @@ func (s *server) logRequest(next http.Handler) http.Handler {
 		})
 
 		// пример: started GET /endpoint
-		logger.Info("started %s %s", request.Method, request.RequestURI)
+		logger.Infof("started %s %s", request.Method, request.RequestURI)
 
 		start := time.Now()
 
@@ -129,8 +132,8 @@ func (s *server) authenticateUser(next http.Handler) http.Handler {
 	})
 }
 
-func (s *server) handleUsersCreate() http.HandlerFunc {
-	// Для "отражения" входящщих данных
+func (s *server) handleUserRegistration() http.HandlerFunc {
+	// Для "отражения" входящих данных
 	type request struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
@@ -158,8 +161,8 @@ func (s *server) handleUsersCreate() http.HandlerFunc {
 	}
 }
 
-func (s *server) handleSessionsCreate() http.HandlerFunc {
-	// Для "отражения" входящщих данных
+func (s *server) handleUserAuth() http.HandlerFunc {
+	// Для "отражения" входящих данных
 	type request struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
@@ -195,10 +198,16 @@ func (s *server) handleSessionsCreate() http.HandlerFunc {
 	}
 }
 
-func (s *server) handleWhoami() http.HandlerFunc {
+func (s *server) handleGetProfile() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// на этом шаге уже подразумеваем, что юзер залогинен и записан в наш контекст
 		s.respond(w, r, http.StatusOK, r.Context().Value(ctxKeyUser).(*model.User))
+	}
+}
+
+func (s *server) handle404() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		s.respond(w, r, http.StatusNotFound, map[string]string{"error": `Page not found`})
 	}
 }
 
@@ -207,7 +216,9 @@ func (s *server) error(w http.ResponseWriter, r *http.Request, code int, err err
 }
 
 func (s *server) respond(w http.ResponseWriter, r *http.Request, code int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
+
 	if data != nil {
 		json.NewEncoder(w).Encode(data)
 	}

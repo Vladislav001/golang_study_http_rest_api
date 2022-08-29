@@ -14,7 +14,7 @@ import (
 	"testing"
 )
 
-func TestServer_HandleUsersCreate(t *testing.T) {
+func TestServer_HandleUserRegistration(t *testing.T) {
 	s := newServer(teststore.New(), sessions.NewCookieStore([]byte("")))
 	testCases := []struct {
 		name         string
@@ -49,14 +49,14 @@ func TestServer_HandleUsersCreate(t *testing.T) {
 			rec := httptest.NewRecorder()
 			b := &bytes.Buffer{}
 			json.NewEncoder(b).Encode(tc.payload)
-			req, _ := http.NewRequest(http.MethodPost, "/users", b)
+			req, _ := http.NewRequest(http.MethodPost, "/registration", b)
 			s.ServeHTTP(rec, req)
 			assert.Equal(t, tc.expectedCode, rec.Code)
 		})
 	}
 }
 
-func TestServer_HandleSessionsCreate(t *testing.T) {
+func TestServer_HandleUserAuth(t *testing.T) {
 	u := model.TestUser(t)
 	store := teststore.New()
 	store.User().Create(u)
@@ -103,7 +103,7 @@ func TestServer_HandleSessionsCreate(t *testing.T) {
 			rec := httptest.NewRecorder()
 			b := &bytes.Buffer{}
 			json.NewEncoder(b).Encode(tc.payload)
-			req, _ := http.NewRequest(http.MethodPost, "/sessions", b)
+			req, _ := http.NewRequest(http.MethodPost, "/auth", b)
 			s.ServeHTTP(rec, req)
 			assert.Equal(t, tc.expectedCode, rec.Code)
 		})
