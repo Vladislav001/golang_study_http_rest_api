@@ -13,6 +13,10 @@
 
 3. Сборка приложения go build -v ./cmd/apiserver
 3.2 Запуск  ./apiserver
+
+
+- Сперва go mod создать go mod init
+- Подтянуть пакет go get github.com/stretchr/testify/assert
 --------------
 TODO:
 1. Разобраться с MAKEFILE для win10, мб аналог есть для сборки на win10
